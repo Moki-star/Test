@@ -6,7 +6,7 @@
   <title>Puzzle Game</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f9f9f9; margin: 0; padding: 20px; }
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #e0f7fa; margin: 0; padding: 20px; }
     #game, #leaderboard, #login, #nickname-entry { display: none; }
     .dialogue { margin-top: 10px; padding: 10px; font-size: 1.2em; background: #e7f3fe; border: 1px solid #b3d7ff; border-radius: 10px; display: none; color: #31708f; }
     .ad-banner { width: 100%; height: 60px; background: #ccc; margin: 10px 0; border-radius: 8px; }
@@ -50,13 +50,14 @@
     let timer;
     let countdown;
     let usedIndexes = new Set();
+    const leaderboardData = JSON.parse(localStorage.getItem('leaderboardData') || '{}');
 
-    const puzzles = [
-      { type: 'math', question: '၃၅ + ၂၉ = ?', choices: ['၆၄', '၆၃', '၆၁', '၆၀'], answer: '၆၄' },
-      { type: 'riddle', question: 'မနက်တုန်းက မနက်ဖြန်ဖြစ်မယ်။ ဘယ်နေ့လဲ။', choices: ['တနင်္လာ', 'အင်္ဂါ', 'ဗုဒ္ဓဟူး', 'တနင်္ဂနွေ'], answer: 'တနင်္ဂနွေ' },
-      { type: 'spelling', question: 'စာလုံးပေါင်းမှန်သောစကား', choices: ['နည်းပညာ', 'နွည်းပညာ', 'နည်းပညါ', 'နညီပညာ'], answer: 'နည်းပညာ' },
-      { type: 'english', question: 'Which word is spelled correctly?', choices: ['Recieve', 'Receive', 'Receeve', 'Receeve'], answer: 'Receive' }
-    ];
+    const puzzles = Array.from({ length: 100000 }, (_, i) => ({
+      type: 'math',
+      question: `${i + 1} + ${i + 2} = ?`,
+      choices: [`${i + i + 3}`, `${i + i + 2}`, `${i + i + 1}`, `${i + i}`],
+      answer: `${i + i + 3}`
+    }));
 
     function handleLogin(response) {
       document.getElementById('login').style.display = 'none';
@@ -120,26 +121,31 @@
       if (correct) {
         wins++;
         score += 10;
-        dialogue.innerText = "မင်းကဆရာကြီးပဲကွာ";
+        dialogue.innerText = "နိုင်ရင် သောက်ရမ်းတာတယ်!";
         correctSound.play();
       } else {
-        dialogue.innerText = "တော်တယ် အရမ်းတော်တာပဲ ပိန်းတဲ့နေရာမှာ";
+        dialogue.innerText = "ရှုံးရင်တော့ သောက်ပိန်းဒါလေးတောင်မနိုင်ဘူး။";
         wrongSound.play();
       }
       document.getElementById('score').innerText = `အမှတ် = ${score}`;
       dialogue.style.display = 'block';
+
+      const key = user.email || user.nickname;
+      leaderboardData[key] = { nickname: user.nickname, wins };
+      localStorage.setItem('leaderboardData', JSON.stringify(leaderboardData));
+
       setTimeout(loadPuzzle, 3000);
     }
 
     function updateLeaderboard() {
       document.getElementById('leaderboard').style.display = 'block';
       const list = document.getElementById('leaderboard-list');
-      list.innerHTML = `<li>${user.nickname} - ${wins} နိုင်</li>`;
+      const sorted = Object.values(leaderboardData).sort((a, b) => b.wins - a.wins).slice(0, 10);
+      list.innerHTML = sorted.map(entry => `<li>${entry.nickname} - ${entry.wins} နိုင်</li>`).join('');
     }
 
     setInterval(updateLeaderboard, 15000);
     document.getElementById('login').style.display = 'block';
   </script>
 </body>
-  </html>
-  
+</html>
