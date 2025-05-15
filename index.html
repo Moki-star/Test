@@ -1,151 +1,154 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Puzzle Game</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #e0f7fa; margin: 0; padding: 20px; }
-    #game, #leaderboard, #login, #nickname-entry { display: none; }
-    .dialogue { margin-top: 10px; padding: 10px; font-size: 1.2em; background: #e7f3fe; border: 1px solid #b3d7ff; border-radius: 10px; display: none; color: #31708f; }
-    .ad-banner { width: 100%; height: 60px; background: #ccc; margin: 10px 0; border-radius: 8px; }
-    button { margin: 5px; padding: 10px 20px; font-size: 1em; border: none; background: #4CAF50; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #45a049; }
-    .score-timer { display: flex; justify-content: center; gap: 30px; font-size: 1.2em; margin-bottom: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-image: url('bg.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      color: white;
+    }
+    .login-container, .game-container {
+      background: rgba(0,0,0,0.6);
+      padding: 20px;
+      margin-top: 50px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hidden { display: none; }
+    input { padding: 8px; margin: 10px; }
+    button { padding: 10px 20px; margin: 5px; }
   </style>
 </head>
 <body>
-  <h1>Puzzle Game</h1>
-  <div id="login">
-    <div id="g_id_onload" data-client_id="29172658075-0f08ipg8lcant46qjce04a7bb2s1higm.apps.googleusercontent.com" data-callback="handleLogin"></div>
+  <div class="login-container" id="login-container">
+    <h2>မှန်ကန်တဲ့အမည်ကိုထည့်ပါ</h2>
+    <input type="text" id="nickname" placeholder="သင့်နာမည်" />
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+         data-context="signin"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
     <div class="g_id_signin" data-type="standard"></div>
   </div>
-  <div id="nickname-entry">
-    <input type="text" id="nickname" placeholder="နာမည်ရေးပါ။">
-    <button onclick="startGame()">စတင်မည်</button>
-  </div>
-  <div class="ad-banner">Ad Space</div>
-  <div id="game">
-    <div class="score-timer">
-      <span id="score">အမှတ် = 0</span>
-      <span id="timer">အချိန် = 10s</span>
-    </div>
-    <div id="puzzle">Puzzle content will go here</div>
-    <div class="dialogue" id="dialogue"></div>
-  </div>
-  <div id="leaderboard">
-    <h2>တစ်ပတ်အနိုင်ရဆုံးသူများ</h2>
-    <ul id="leaderboard-list"></ul>
-  </div>
-  <div class="ad-banner">Ad Space</div>
 
-  <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-  <audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <div class="game-container hidden" id="game-container">
+    <h2>ပဟေဠိဖြေပါ</h2>
+    <p id="question"></p>
+    <div id="options"></div>
+    <p id="score">အမှတ်: 0</p>
+    <p id="timer">ကျန်ချိန်: 30</p>
+    <p id="mistakes">မှားခြင်း: 0/3</p>
+    <button onclick="nextPuzzle()">နောက်ထပ်</button>
+    <p id="cooldown-msg" class="hidden">ပြန်စဉ်းစားရန် 1 နာရီစောင့်ပါ</p>
+  </div>
 
   <script>
-    let user = {};
-    let wins = 0;
+    let nickname = '';
     let score = 0;
     let timer;
-    let countdown;
-    let usedIndexes = new Set();
-    const leaderboardData = JSON.parse(localStorage.getItem('leaderboardData') || '{}');
+    let timeLeft = 30;
+    let currentQuestion;
+    let mistakeCount = 0;
 
     const puzzles = Array.from({ length: 100000 }, (_, i) => ({
-      type: 'math',
-      question: `${i + 1} + ${i + 2} = ?`,
-      choices: [`${i + i + 3}`, `${i + i + 2}`, `${i + i + 1}`, `${i + i}`],
-      answer: `${i + i + 3}`
+      question: `ပဟေဠိ ${i + 1} ဆိုတာကဘာလဲ?`,
+      options: shuffle(["ဖြေချင်တာ", "အဖြေမှားတယ်", "မှန်ကန်တယ်", "အဖြေတစ်ခုပဲ"]),
+      answer: "ဖြေချင်တာ"
     }));
 
-    function handleLogin(response) {
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('nickname-entry').style.display = 'block';
-      const credential = JSON.parse(atob(response.credential.split('.')[1]));
-      user.email = credential.email;
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
 
-    function startGame() {
-      const nickname = document.getElementById('nickname').value.trim();
-      if (!nickname) return alert("နာမည်ရေးပါ။");
-      user.nickname = nickname;
-      document.getElementById('nickname-entry').style.display = 'none';
-      document.getElementById('game').style.display = 'block';
-      loadPuzzle();
+    function handleCredentialResponse(response) {
+      nickname = document.getElementById("nickname").value || "မသိသေးသူ";
+      localStorage.setItem("nickname", nickname);
+      localStorage.setItem("token", response.credential);
+      document.getElementById("login-container").classList.add("hidden");
+      document.getElementById("game-container").classList.remove("hidden");
+      const storedScore = localStorage.getItem("score");
+      if (storedScore) score = parseInt(storedScore);
+      showQuestion();
     }
 
-    function loadPuzzle() {
-      if (usedIndexes.size >= puzzles.length) {
-        alert("အကုန်ဖြေပြီးပါပြီ!");
+    function showQuestion() {
+      const cooldownUntil = localStorage.getItem("cooldownUntil");
+      if (cooldownUntil && new Date().getTime() < parseInt(cooldownUntil)) {
+        document.getElementById("cooldown-msg").classList.remove("hidden");
         return;
       }
 
-      clearInterval(countdown);
-      let timeLeft = 10;
-      document.getElementById('timer').innerText = `အချိန် = ${timeLeft}s`;
+      document.getElementById("cooldown-msg").classList.add("hidden");
+      mistakeCount = 0;
+      timeLeft = 30;
+      document.getElementById("mistakes").innerText = `မှားခြင်း: ${mistakeCount}/3`;
 
-      countdown = setInterval(() => {
+      currentQuestion = puzzles[Math.floor(Math.random() * puzzles.length)];
+      document.getElementById("question").innerText = currentQuestion.question;
+      const opts = currentQuestion.options.map(opt => `<button onclick="checkAnswer('${opt}')">${opt}</button>`);
+      document.getElementById("options").innerHTML = opts.join(" ");
+      document.getElementById("score").innerText = `အမှတ်: ${score}`;
+
+      clearInterval(timer);
+      timer = setInterval(() => {
         timeLeft--;
-        document.getElementById('timer').innerText = `အချိန် = ${timeLeft}s`;
+        document.getElementById("timer").innerText = `ကျန်ချိန်: ${timeLeft}`;
         if (timeLeft <= 0) {
-          clearInterval(countdown);
-          submitAnswer(false);
+          clearInterval(timer);
+          loseGame();
         }
       }, 1000);
-
-      let index;
-      do {
-        index = Math.floor(Math.random() * puzzles.length);
-      } while (usedIndexes.has(index));
-      usedIndexes.add(index);
-
-      const puzzle = puzzles[index];
-      const puzzleDiv = document.getElementById('puzzle');
-      const dialogue = document.getElementById('dialogue');
-      dialogue.style.display = 'none';
-
-      puzzleDiv.innerHTML = `
-        <h3>${puzzle.question}</h3>
-        ${puzzle.choices.map(choice => `
-          <button onclick="submitAnswer('${choice}' === '${puzzle.answer}')">${choice}</button>
-        `).join('')}
-      `;
     }
 
-    function submitAnswer(correct) {
-      clearInterval(countdown);
-      const dialogue = document.getElementById('dialogue');
-      const correctSound = document.getElementById('correctSound');
-      const wrongSound = document.getElementById('wrongSound');
-      if (correct) {
-        wins++;
-        score += 10;
-        dialogue.innerText = "နိုင်ရင် သောက်ရမ်းတာတယ်!";
-        correctSound.play();
+    function checkAnswer(answer) {
+      if (answer === currentQuestion.answer) {
+        score++;
+        localStorage.setItem("score", score);
+        nextPuzzle();
       } else {
-        dialogue.innerText = "ရှုံးရင်တော့ သောက်ပိန်းဒါလေးတောင်မနိုင်ဘူး။";
-        wrongSound.play();
+        mistakeCount++;
+        document.getElementById("mistakes").innerText = `မှားခြင်း: ${mistakeCount}/3`;
+        if (mistakeCount >= 3) {
+          loseGame();
+        }
       }
-      document.getElementById('score').innerText = `အမှတ် = ${score}`;
-      dialogue.style.display = 'block';
-
-      const key = user.email || user.nickname;
-      leaderboardData[key] = { nickname: user.nickname, wins };
-      localStorage.setItem('leaderboardData', JSON.stringify(leaderboardData));
-
-      setTimeout(loadPuzzle, 3000);
     }
 
-    function updateLeaderboard() {
-      document.getElementById('leaderboard').style.display = 'block';
-      const list = document.getElementById('leaderboard-list');
-      const sorted = Object.values(leaderboardData).sort((a, b) => b.wins - a.wins).slice(0, 10);
-      list.innerHTML = sorted.map(entry => `<li>${entry.nickname} - ${entry.wins} နိုင်</li>`).join('');
+    function nextPuzzle() {
+      clearInterval(timer);
+      showQuestion();
     }
 
-    setInterval(updateLeaderboard, 15000);
-    document.getElementById('login').style.display = 'block';
+    function loseGame() {
+      alert("အချိန်ပြည့်သွားသည် သို့မဟုတ် 3 ချက်မှားသွားသည်။ 1 နာရီအနားယူပါ။");
+      localStorage.setItem("cooldownUntil", new Date().getTime() + 3600000);
+      document.getElementById("cooldown-msg").classList.remove("hidden");
+      document.getElementById("options").innerHTML = "";
+      clearInterval(timer);
+    }
+
+    window.onload = () => {
+      const savedNickname = localStorage.getItem("nickname");
+      if (savedNickname) {
+        nickname = savedNickname;
+        document.getElementById("nickname").value = nickname;
+      }
+    };
   </script>
 </body>
 </html>
