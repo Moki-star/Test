@@ -6,6 +6,7 @@
     <title>ပဟေဠိဂိမ်း</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
     <style>
       body {
         font-family: 'Myanmar Text', sans-serif;
@@ -57,7 +58,7 @@
       <div v-if="!user" class="login-box">
         <h2>Google နဲ့ Login ဝင်ပါ</h2>
         <div id="g_id_onload"
-             data-client_id="29172658075-0f08ipg8lcant46qjce04a7bb2s1higm.apps.googleusercontent.com"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID"
              data-callback="onSignIn">
         </div>
         <div class="g_id_signin" data-type="standard"></div>
@@ -102,7 +103,7 @@
         { text: "ရေ ၁၀ သွင်းလိုက်ရင် ဘာတွေပေါ်မလဲ?", options: ["ရေခဲ", "ဖိအား", "မူရင်းရေ"], answer: "ဖိအား" }
       ];
 
-      new Vue({
+      const app = new Vue({
         el: '#app',
         data: {
           user: null,
@@ -124,9 +125,13 @@
         },
         methods: {
           loadFromStorage() {
-            const saved = localStorage.getItem('puzzleData');
-            if (saved) {
-              const data = JSON.parse(saved);
+            const savedUser = localStorage.getItem('user');
+            const savedData = localStorage.getItem('puzzleData');
+            if (savedUser) {
+              this.user = JSON.parse(savedUser);
+            }
+            if (savedData) {
+              const data = JSON.parse(savedData);
               this.score = data.score;
               this.cooldownStart = data.cooldownStart;
             }
@@ -140,6 +145,9 @@
           logout() {
             this.user = null;
             this.score = 0;
+            this.mistakes = 0;
+            this.cooldownStart = null;
+            localStorage.removeItem('user');
             localStorage.removeItem('puzzleData');
           },
           startGame() {
@@ -171,6 +179,7 @@
               this.cooldownStart = new Date().toISOString();
               this.question = null;
               this.saveToStorage();
+              clearInterval(this.timer);
             } else {
               this.question = null;
               setTimeout(() => this.startGame(), 1000);
@@ -179,15 +188,17 @@
         },
         mounted() {
           this.loadFromStorage();
+          if (this.user) this.startGame();
         }
       });
 
       function onSignIn(response) {
-        const user = jwt_decode(response.credential);
-        app.user = { name: user.name };
+        const decoded = jwt_decode(response.credential);
+        const userInfo = { name: decoded.name };
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        app.user = userInfo;
         app.startGame();
       }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
   </body>
 </html>
