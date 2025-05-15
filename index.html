@@ -6,27 +6,97 @@
   <title>Puzzle Game</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f9f9f9; margin: 0; padding: 20px; }
-    #game, #leaderboard, #login, #nickname-entry { display: none; }
-    .dialogue { margin-top: 10px; padding: 10px; font-size: 1.2em; background: #e7f3fe; border: 1px solid #b3d7ff; border-radius: 10px; display: none; color: #31708f; }
-    .ad-banner { width: 100%; height: 60px; background: #ccc; margin: 10px 0; border-radius: 8px; }
-    button { margin: 5px; padding: 10px 20px; font-size: 1em; border: none; background: #4CAF50; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #45a049; }
-    .score-timer { display: flex; justify-content: center; gap: 30px; font-size: 1.2em; margin-bottom: 10px; }
+    body {
+      background-image: url('A_digital_illustration_in_anime_and_semi-realism_s.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #fff;
+    }
+    h1 {
+      margin-top: 20px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    }
+    #game, #leaderboard, #login, #nickname-entry {
+      display: none;
+    }
+    .container {
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      margin: 30px auto;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+    .dialogue {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 1.2em;
+      background: #e7f3feaa;
+      border: 1px solid #b3d7ff;
+      border-radius: 10px;
+      display: none;
+      color: #000;
+    }
+    .ad-banner {
+      width: 100%;
+      height: 60px;
+      background: #ccccccaa;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      background: #ff69b4;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ff1493;
+    }
+    .score-timer {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      width: 80%;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>Puzzle Game</h1>
-  <div id="login">
-    <div id="g_id_onload" data-client_id="29172658075-0f08ipg8lcant46qjce04a7bb2s1higm.apps.googleusercontent.com" data-callback="handleLogin"></div>
+
+  <div id="login" class="container">
+    <div id="g_id_onload"
+         data-client_id="29172658075-0f08ipg8lcant46qjce04a7bb2s1higm.apps.googleusercontent.com"
+         data-callback="handleLogin"></div>
     <div class="g_id_signin" data-type="standard"></div>
   </div>
-  <div id="nickname-entry">
+
+  <div id="nickname-entry" class="container">
     <input type="text" id="nickname" placeholder="နာမည်ရေးပါ။">
     <button onclick="startGame()">စတင်မည်</button>
   </div>
+
   <div class="ad-banner">Ad Space</div>
-  <div id="game">
+
+  <div id="game" class="container">
     <div class="score-timer">
       <span id="score">အမှတ် = 0</span>
       <span id="timer">အချိန် = 10s</span>
@@ -34,10 +104,12 @@
     <div id="puzzle">Puzzle content will go here</div>
     <div class="dialogue" id="dialogue"></div>
   </div>
-  <div id="leaderboard">
+
+  <div id="leaderboard" class="container">
     <h2>တစ်ပတ်အနိုင်ရဆုံးသူများ</h2>
     <ul id="leaderboard-list"></ul>
   </div>
+
   <div class="ad-banner">Ad Space</div>
 
   <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
@@ -120,10 +192,10 @@
       if (correct) {
         wins++;
         score += 10;
-        dialogue.innerText = "နိုင်ရင် သောက်ရမ်းတာတယ်!";
+        dialogue.innerText = "အရမ်းတော်တဲ့ ကောင်ပါလားလို့";
         correctSound.play();
       } else {
-        dialogue.innerText = "ရှုံးရင်တော့ သောက်ပိန်းဒါလေးတောင်မနိုင်ဘူး။";
+        dialogue.innerText = "ပိန်းဉ‌ေလး ဒါလေးတောင်မနိုင်ဘူး။";
         wrongSound.play();
       }
       document.getElementById('score').innerText = `အမှတ် = ${score}`;
