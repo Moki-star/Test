@@ -1,154 +1,30 @@
+// index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Puzzle Game</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-image: url('bg.jpg');
-      background-size: cover;
-      background-repeat: no-repeat;
-      color: white;
-    }
-    .login-container, .game-container {
-      background: rgba(0,0,0,0.6);
-      padding: 20px;
-      margin-top: 50px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .hidden { display: none; }
-    input { padding: 8px; margin: 10px; }
-    button { padding: 10px 20px; margin: 5px; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
-  <div class="login-container" id="login-container">
-    <h2>မှန်ကန်တဲ့အမည်ကိုထည့်ပါ</h2>
-    <input type="text" id="nickname" placeholder="သင့်နာမည်" />
-    <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID"
-         data-context="signin"
-         data-callback="handleCredentialResponse"
-         data-auto_prompt="false">
+  <div id="app">
+    <div id="login-screen" class="screen">
+      <h1>ပဟေဠိဂိမ်း</h1>
+      <button id="login-btn">Google ဖြင့် ဝင်ရန်</button>
     </div>
-    <div class="g_id_signin" data-type="standard"></div>
+
+    <div id="game-screen" class="screen hidden">
+      <p id="welcome-msg"></p>
+      <p>အမှတ်: <span id="score">0</span></p>
+      <div id="puzzle-container"></div>
+      <button id="logout-btn">Logout</button>
+    </div>
   </div>
 
-  <div class="game-container hidden" id="game-container">
-    <h2>ပဟေဠိဖြေပါ</h2>
-    <p id="question"></p>
-    <div id="options"></div>
-    <p id="score">အမှတ်: 0</p>
-    <p id="timer">ကျန်ချိန်: 30</p>
-    <p id="mistakes">မှားခြင်း: 0/3</p>
-    <button onclick="nextPuzzle()">နောက်ထပ်</button>
-    <p id="cooldown-msg" class="hidden">ပြန်စဉ်းစားရန် 1 နာရီစောင့်ပါ</p>
-  </div>
-
-  <script>
-    let nickname = '';
-    let score = 0;
-    let timer;
-    let timeLeft = 30;
-    let currentQuestion;
-    let mistakeCount = 0;
-
-    const puzzles = Array.from({ length: 100000 }, (_, i) => ({
-      question: `ပဟေဠိ ${i + 1} ဆိုတာကဘာလဲ?`,
-      options: shuffle(["ဖြေချင်တာ", "အဖြေမှားတယ်", "မှန်ကန်တယ်", "အဖြေတစ်ခုပဲ"]),
-      answer: "ဖြေချင်တာ"
-    }));
-
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    function handleCredentialResponse(response) {
-      nickname = document.getElementById("nickname").value || "မသိသေးသူ";
-      localStorage.setItem("nickname", nickname);
-      localStorage.setItem("token", response.credential);
-      document.getElementById("login-container").classList.add("hidden");
-      document.getElementById("game-container").classList.remove("hidden");
-      const storedScore = localStorage.getItem("score");
-      if (storedScore) score = parseInt(storedScore);
-      showQuestion();
-    }
-
-    function showQuestion() {
-      const cooldownUntil = localStorage.getItem("cooldownUntil");
-      if (cooldownUntil && new Date().getTime() < parseInt(cooldownUntil)) {
-        document.getElementById("cooldown-msg").classList.remove("hidden");
-        return;
-      }
-
-      document.getElementById("cooldown-msg").classList.add("hidden");
-      mistakeCount = 0;
-      timeLeft = 30;
-      document.getElementById("mistakes").innerText = `မှားခြင်း: ${mistakeCount}/3`;
-
-      currentQuestion = puzzles[Math.floor(Math.random() * puzzles.length)];
-      document.getElementById("question").innerText = currentQuestion.question;
-      const opts = currentQuestion.options.map(opt => `<button onclick="checkAnswer('${opt}')">${opt}</button>`);
-      document.getElementById("options").innerHTML = opts.join(" ");
-      document.getElementById("score").innerText = `အမှတ်: ${score}`;
-
-      clearInterval(timer);
-      timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById("timer").innerText = `ကျန်ချိန်: ${timeLeft}`;
-        if (timeLeft <= 0) {
-          clearInterval(timer);
-          loseGame();
-        }
-      }, 1000);
-    }
-
-    function checkAnswer(answer) {
-      if (answer === currentQuestion.answer) {
-        score++;
-        localStorage.setItem("score", score);
-        nextPuzzle();
-      } else {
-        mistakeCount++;
-        document.getElementById("mistakes").innerText = `မှားခြင်း: ${mistakeCount}/3`;
-        if (mistakeCount >= 3) {
-          loseGame();
-        }
-      }
-    }
-
-    function nextPuzzle() {
-      clearInterval(timer);
-      showQuestion();
-    }
-
-    function loseGame() {
-      alert("အချိန်ပြည့်သွားသည် သို့မဟုတ် 3 ချက်မှားသွားသည်။ 1 နာရီအနားယူပါ။");
-      localStorage.setItem("cooldownUntil", new Date().getTime() + 3600000);
-      document.getElementById("cooldown-msg").classList.remove("hidden");
-      document.getElementById("options").innerHTML = "";
-      clearInterval(timer);
-    }
-
-    window.onload = () => {
-      const savedNickname = localStorage.getItem("nickname");
-      if (savedNickname) {
-        nickname = savedNickname;
-        document.getElementById("nickname").value = nickname;
-      }
-    };
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
