@@ -1,53 +1,145 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Puzzle Game with Video Background</title>
-<style>
-  body, html {
-    margin: 0; padding: 0; height: 100%;
-    overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  #video-bg {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    object-fit: cover;
-    z-index: -1;
-    filter: brightness(0.6); /* Video မရှုပ်ဖို့ နည်းနည်းမှောင် */
-  }
-  #game-ui {
-    position: relative;
-    z-index: 10;
-    color: white;
-    text-align: center;
-    padding: 30px;
-  }
-  button {
-    padding: 10px 20px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    margin: 10px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Game</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f9f9f9; margin: 0; padding: 20px; }
+    #game, #leaderboard, #login, #nickname-entry { display: none; }
+    .dialogue { margin-top: 10px; padding: 10px; font-size: 1.2em; background: #e7f3fe; border: 1px solid #b3d7ff; border-radius: 10px; display: none; color: #31708f; }
+    .ad-banner { width: 100%; height: 60px; background: #ccc; margin: 10px 0; border-radius: 8px; }
+    button { margin: 5px; padding: 10px 20px; font-size: 1em; border: none; background: #4CAF50; color: white; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #45a049; }
+    .score-timer { display: flex; justify-content: center; gap: 30px; font-size: 1.2em; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
-
-  <video autoplay muted loop id="video-bg">
-    <source src="YOUR_VIDEO_URL_HERE.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-
-  <div id="game-ui">
-    <h1>နောက်ခံ Video နဲ့ Puzzle Game</h1>
-    <!-- Your puzzle game UI goes here -->
-    <p>ဒီမှာ puzzle game အတွက် UI element တွေ ထည့်လိုက်ပါ။</p>
-    <button>စတင်မည်</button>
+  <h1>Puzzle Game</h1>
+  <div id="login">
+    <div id="g_id_onload" data-client_id="29172658075-0f08ipg8lcant46qjce04a7bb2s1higm.apps.googleusercontent.com" data-callback="handleLogin"></div>
+    <div class="g_id_signin" data-type="standard"></div>
   </div>
+  <div id="nickname-entry">
+    <input type="text" id="nickname" placeholder="နာမည်ရေးပါ။">
+    <button onclick="startGame()">စတင်မည်</button>
+  </div>
+  <div class="ad-banner">Ad Space</div>
+  <div id="game">
+    <div class="score-timer">
+      <span id="score">အမှတ် = 0</span>
+      <span id="timer">အချိန် = 10s</span>
+    </div>
+    <div id="puzzle">Puzzle content will go here</div>
+    <div class="dialogue" id="dialogue"></div>
+  </div>
+  <div id="leaderboard">
+    <h2>တစ်ပတ်အနိုင်ရဆုံးသူများ</h2>
+    <ul id="leaderboard-list"></ul>
+  </div>
+  <div class="ad-banner">Ad Space</div>
 
+  <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  <audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+  <script>
+    let user = {};
+    let wins = 0;
+    let score = 0;
+    let timer;
+    let countdown;
+    let usedIndexes = new Set();
+
+    const puzzles = [
+      { type: 'math', question: '၃၅ + ၂၉ = ?', choices: ['၆၄', '၆၃', '၆၁', '၆၀'], answer: '၆၄' },
+      { type: 'riddle', question: 'မနက်တုန်းက မနက်ဖြန်ဖြစ်မယ်။ ဘယ်နေ့လဲ။', choices: ['တနင်္လာ', 'အင်္ဂါ', 'ဗုဒ္ဓဟူး', 'တနင်္ဂနွေ'], answer: 'တနင်္ဂနွေ' },
+      { type: 'spelling', question: 'စာလုံးပေါင်းမှန်သောစကား', choices: ['နည်းပညာ', 'နွည်းပညာ', 'နည်းပညါ', 'နညီပညာ'], answer: 'နည်းပညာ' },
+      { type: 'english', question: 'Which word is spelled correctly?', choices: ['Recieve', 'Receive', 'Receeve', 'Receeve'], answer: 'Receive' }
+    ];
+
+    function handleLogin(response) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('nickname-entry').style.display = 'block';
+      const credential = JSON.parse(atob(response.credential.split('.')[1]));
+      user.email = credential.email;
+    }
+
+    function startGame() {
+      const nickname = document.getElementById('nickname').value.trim();
+      if (!nickname) return alert("နာမည်ရေးပါ။");
+      user.nickname = nickname;
+      document.getElementById('nickname-entry').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      loadPuzzle();
+    }
+
+    function loadPuzzle() {
+      if (usedIndexes.size >= puzzles.length) {
+        alert("အကုန်ဖြေပြီးပါပြီ!");
+        return;
+      }
+
+      clearInterval(countdown);
+      let timeLeft = 10;
+      document.getElementById('timer').innerText = `အချိန် = ${timeLeft}s`;
+
+      countdown = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').innerText = `အချိန် = ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+          submitAnswer(false);
+        }
+      }, 1000);
+
+      let index;
+      do {
+        index = Math.floor(Math.random() * puzzles.length);
+      } while (usedIndexes.has(index));
+      usedIndexes.add(index);
+
+      const puzzle = puzzles[index];
+      const puzzleDiv = document.getElementById('puzzle');
+      const dialogue = document.getElementById('dialogue');
+      dialogue.style.display = 'none';
+
+      puzzleDiv.innerHTML = `
+        <h3>${puzzle.question}</h3>
+        ${puzzle.choices.map(choice => `
+          <button onclick="submitAnswer('${choice}' === '${puzzle.answer}')">${choice}</button>
+        `).join('')}
+      `;
+    }
+
+    function submitAnswer(correct) {
+      clearInterval(countdown);
+      const dialogue = document.getElementById('dialogue');
+      const correctSound = document.getElementById('correctSound');
+      const wrongSound = document.getElementById('wrongSound');
+      if (correct) {
+        wins++;
+        score += 10;
+        dialogue.innerText = "နိုင်ရင် သောက်ရမ်းတာတယ်!";
+        correctSound.play();
+      } else {
+        dialogue.innerText = "ရှုံးရင်တော့ သောက်ပိန်းဒါလေးတောင်မနိုင်ဘူး။";
+        wrongSound.play();
+      }
+      document.getElementById('score').innerText = `အမှတ် = ${score}`;
+      dialogue.style.display = 'block';
+      setTimeout(loadPuzzle, 3000);
+    }
+
+    function updateLeaderboard() {
+      document.getElementById('leaderboard').style.display = 'block';
+      const list = document.getElementById('leaderboard-list');
+      list.innerHTML = `<li>${user.nickname} - ${wins} နိုင်</li>`;
+    }
+
+    setInterval(updateLeaderboard, 15000);
+    document.getElementById('login').style.display = 'block';
+  </script>
 </body>
-</html>
+  </html>
+  
