@@ -1,30 +1,193 @@
-// index.html
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Puzzle Game</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-</head>
-<body>
-  <div id="app">
-    <div id="login-screen" class="screen">
-      <h1>ပဟေဠိဂိမ်း</h1>
-      <button id="login-btn">Google ဖြင့် ဝင်ရန်</button>
+<html lang="my">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ပဟေဠိဂိမ်း</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <style>
+      body {
+        font-family: 'Myanmar Text', sans-serif;
+        background: linear-gradient(to bottom right, #e0f7fa, #80deea);
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .login-box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .question {
+        font-size: 20px;
+        margin: 20px 0;
+      }
+      .options button {
+        display: block;
+        margin: 10px auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        background-color: #00838f;
+        color: white;
+        cursor: pointer;
+      }
+      .options button:hover {
+        background-color: #006064;
+      }
+      .leaderboard, .online-count {
+        margin-top: 30px;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <div v-if="!user" class="login-box">
+        <h2>Google နဲ့ Login ဝင်ပါ</h2>
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+             data-callback="onSignIn">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
+      </div>
+
+      <div v-else>
+        <h2>ကြိုဆိုပါတယ် {{ user.name }}!</h2>
+        <button @click="logout">ထွက်မယ်</button>
+
+        <div v-if="cooldownLeft > 0">
+          <p>တစ်နာရီနားယူဖို့လိုတယ်။ {{ cooldownLeft }} မိနစ်ကျန်တယ်။</p>
+        </div>
+
+        <div v-else>
+          <div v-if="question">
+            <div class="question">{{ question.text }}</div>
+            <div class="options">
+              <button v-for="option in question.options" @click="answer(option)">{{ option }}</button>
+            </div>
+            <div>ကျန်သောအချိန်: {{ timeLeft }} seconds</div>
+          </div>
+          <div v-else>
+            <p>အဖြေမှန်ပါပဲ။ နောက်တစ်ခုပြင်ဆင်နေတယ်။</p>
+          </div>
+        </div>
+
+        <div class="leaderboard">
+          <h3>အမှတ်များ</h3>
+          <p>ကိုယ်ရရှိသောအမှတ်: {{ score }}</p>
+        </div>
+        <div class="online-count">
+          <p>လက်ရှိ online ကစားသူ: {{ onlineCount }}</p>
+        </div>
+      </div>
     </div>
 
-    <div id="game-screen" class="screen hidden">
-      <p id="welcome-msg"></p>
-      <p>အမှတ်: <span id="score">0</span></p>
-      <div id="puzzle-container"></div>
-      <button id="logout-btn">Logout</button>
-    </div>
-  </div>
+    <script>
+      const puzzles = [
+        { text: "၁ + ၁ = ?", options: ["၂", "၁", "၃"], answer: "၂" },
+        { text: "မြန်မာ့မြို့တော်မှာ ဘယ်မြို့လဲ?", options: ["ရန်ကုန်", "နေပြည်တော်", "မန္တလေး"], answer: "နေပြည်တော်" },
+        { text: "Correct spelling:", options: ["beleive", "believe", "belive"], answer: "believe" },
+        { text: "ရေ ၁၀ သွင်းလိုက်ရင် ဘာတွေပေါ်မလဲ?", options: ["ရေခဲ", "ဖိအား", "မူရင်းရေ"], answer: "ဖိအား" }
+      ];
 
-  <script src="script.js"></script>
-</body>
+      new Vue({
+        el: '#app',
+        data: {
+          user: null,
+          question: null,
+          score: 0,
+          mistakes: 0,
+          cooldownStart: null,
+          timeLeft: 30,
+          timer: null,
+          onlineCount: Math.floor(Math.random() * 1000) + 1,
+        },
+        computed: {
+          cooldownLeft() {
+            if (!this.cooldownStart) return 0;
+            const now = new Date();
+            const diff = 60 - Math.floor((now - new Date(this.cooldownStart)) / 60000);
+            return diff > 0 ? diff : 0;
+          }
+        },
+        methods: {
+          loadFromStorage() {
+            const saved = localStorage.getItem('puzzleData');
+            if (saved) {
+              const data = JSON.parse(saved);
+              this.score = data.score;
+              this.cooldownStart = data.cooldownStart;
+            }
+          },
+          saveToStorage() {
+            localStorage.setItem('puzzleData', JSON.stringify({
+              score: this.score,
+              cooldownStart: this.cooldownStart
+            }));
+          },
+          logout() {
+            this.user = null;
+            this.score = 0;
+            localStorage.removeItem('puzzleData');
+          },
+          startGame() {
+            if (this.cooldownLeft > 0) return;
+            this.question = puzzles[Math.floor(Math.random() * puzzles.length)];
+            this.timeLeft = 30;
+            clearInterval(this.timer);
+            this.timer = setInterval(() => {
+              this.timeLeft--;
+              if (this.timeLeft <= 0) {
+                this.mistakes++;
+                this.checkMistakes();
+              }
+            }, 1000);
+          },
+          answer(option) {
+            if (option === this.question.answer) {
+              this.score++;
+              this.question = null;
+              setTimeout(() => this.startGame(), 1000);
+            } else {
+              this.mistakes++;
+              this.checkMistakes();
+            }
+            this.saveToStorage();
+          },
+          checkMistakes() {
+            if (this.mistakes >= 3) {
+              this.cooldownStart = new Date().toISOString();
+              this.question = null;
+              this.saveToStorage();
+            } else {
+              this.question = null;
+              setTimeout(() => this.startGame(), 1000);
+            }
+          }
+        },
+        mounted() {
+          this.loadFromStorage();
+        }
+      });
+
+      function onSignIn(response) {
+        const user = jwt_decode(response.credential);
+        app.user = { name: user.name };
+        app.startGame();
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+  </body>
 </html>
