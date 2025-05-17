@@ -24,3 +24,14 @@ input {
 .hidden {
   display: none;
   }
+#leaderboard {
+  margin-top: 20px;
+  background: #eee;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+#onlineCount {
+  margin: 15px 0;
+  font-weight: bold;
+}
