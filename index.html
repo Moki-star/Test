@@ -6,7 +6,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Your HTML layout: login button, username input, puzzle area, etc. -->
   <div class="container">
     <button id="googleLoginBtn">Login with Google</button>
 
@@ -49,8 +48,13 @@
     </div>
   </div>
 
-  <!-- Scripts must be in this order -->
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="main.js"></script>
+  <!-- Firebase SDKs (for compat mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- Your Firebase config and app logic -->
+  <script src="firebase-config.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
