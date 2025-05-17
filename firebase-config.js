@@ -1,28 +1,38 @@
 // firebase-config.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-// Your Firebase config goes here
+// Replace this with your real Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyCdLlh9F4fAMf6hBtC7F9PA3l-UkChjWkc",
+  apiKey: "AIzaSyCdlLh9F4AFM6hf8tC7F9PA9bEId6TeRZQ",
   authDomain: "vs-3-5fc2b.firebaseapp.com",
   projectId: "vs-3-5fc2b",
-  storageBucket: "vs-3-5fc2b.firebasestorage.app",
+  storageBucket: "vs-3-5fc2b.appspot.com",
   messagingSenderId: "20790529796",
-  appId: "1:20790529796:web:f0407562caab24c0594a51"
+  appId: "1:20790529796:web:f0407562caab24c0594a51",
+  measurementId: "G-W4G1C7MHLC"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Attach modules to window for global access
 window.firebase = {
-  auth: firebase.auth(),
-  db: firebase.firestore(),
-  signInWithPopup: firebase.auth().signInWithPopup,
-  GoogleAuthProvider: firebase.auth.GoogleAuthProvider,
-  doc: firebase.firestore().doc,
-  getDoc: firebase.firestore().getDoc,
-  setDoc: firebase.firestore().setDoc,
-  updateDoc: firebase.firestore().updateDoc,
-  collection: firebase.firestore().collection,
-  getDocs: firebase.firestore().getDocs
+  auth,
+  db,
+  signInWithPopup,
+  GoogleAuthProvider,
+  doc,
+  getDoc,
+  setDoc
 };
