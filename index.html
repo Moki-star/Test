@@ -7,7 +7,17 @@
   <script defer src="firebase-config.js"></script>
   <script defer src="main.js"></script>
 </head>
-<body>
+<div id="adminPanel" class="hidden">
+  <h2>🛠 Admin Dashboard</h2>
+  <table border="1" id="userTable">
+    <thead>
+      <tr><th>Username</th><th>Score</th><th>Losses</th><th>Cooldown</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+  
+  <body>
   <div class="container">
     <h1>🧩 Puzzle Game</h1>
     <button id="googleLoginBtn">Login with Google</button>
