@@ -149,4 +149,18 @@ function showCooldown(endTime) {
     timer.textContent = `${hrs}:${mins}:${secs}`;
   }, 1000);
 }
-
+async function loadLeaderboard() {
+  const { db, collection, getDocs, query, orderBy, limit } = window.firebase;
+  const q = query(collection(db, "users"), orderBy("score", "desc"), limit(10));
+  const querySnapshot = await getDocs(q);
+  const list = document.getElementById("leaderboardList");
+  list.innerHTML = "";
+  querySnapshot.forEach(doc => {
+    const user = doc.data();
+    const li = document.createElement("li");
+    li.textContent = `${user.username}: ${user.score}`;
+    list.appendChild(li);
+  });
+  document.getElementById("leaderboard").classList.remove("hidden");
+                               }
+        
