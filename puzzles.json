@@ -1,0 +1,17 @@
+[
+  {
+    "question": "2 + 2 = ?",
+    "options": ["3", "4", "5"],
+    "answer": "4"
+  },
+  {
+    "question": "မြန်မာနိုင်ငံ 수도ကဘာလဲ?",
+    "options": ["ရန်ကုန်", "နေပြည်တော်", "မန္တလေး"],
+    "answer": "နေပြည်တော်"
+  },
+  {
+    "question": "Choose correct spelling:",
+    "options": ["recieve", "receive", "receeve"],
+    "answer": "receive"
+  }
+]
