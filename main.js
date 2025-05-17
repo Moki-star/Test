@@ -15,15 +15,16 @@ let userDocRef = null;
 const ADMIN_UIDS = ["uhJl4FERtDMjC2r8Jg6tm54WGtm1"];
 
 loginBtn.onclick = async () => {
-  const {
-    auth,
-    db,
-    signInWithPopup,
-    GoogleAuthProvider,
-    doc,
-    getDoc,
-    setDoc
-  } = window.firebase;
+  import {
+  auth,
+  db,
+  signInWithPopup,
+  GoogleAuthProvider,
+  doc,
+  getDoc,
+  setDoc
+} from "./firebase-config.js";
+
 
   const provider = new GoogleAuthProvider();
 
