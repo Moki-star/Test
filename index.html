@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Puzzle Game Login</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puzzle Game</title>
+  <link rel="stylesheet" href="style.css" />
   <script defer src="firebase-config.js"></script>
   <script defer src="main.js"></script>
 </head>
-<div id="adminPanel" class="hidden">
-  <h2>🛠 Admin Dashboard</h2>
-  <table border="1" id="userTable">
-    <thead>
-      <tr><th>Username</th><th>Score</th><th>Losses</th><th>Cooldown</th><th>Actions</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-  
-  <body>
+<body>
+  <div id="adminPanel" class="hidden">
+    <h2>🛠 Admin Dashboard</h2>
+    <table border="1" id="userTable">
+      <thead>
+        <tr><th>Username</th><th>Score</th><th>Losses</th><th>Cooldown</th><th>Actions</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
   <div class="container">
     <h1>🧩 Puzzle Game</h1>
     <button id="googleLoginBtn">Login with Google</button>
@@ -33,26 +34,30 @@
 
       <div id="onlineCount">🔴 Online Players: <span id="onlineNumber">0</span></div>
 
-<div id="leaderboard" class="hidden">
-  <h3>🏆 Leaderboard</h3>
-  <ol id="leaderboardList"></ol>
-</div>
-      
+      <div id="leaderboard" class="hidden">
+        <h3>🏆 Leaderboard</h3>
+        <ol id="leaderboardList"></ol>
+      </div>
+
       <div id="cooldown" class="hidden">
-  <p>😴 သုံးကြိမ် ဆုံးရှုံးပြီးသားပါ။ နောက်ထပ် <span id="cdTimer"></span> ပြန်လာပါ။</p>
-</div>
+        <p>😭 သွိန်ကြင် ဆွန်ရွန်ပီဒာပါ။ နောက်ထပ် <span id="cdTimer"></span> ပရေလာပါ။</p>
+      </div>
 
-<div id="gameArea" class="hidden">
-  <h2 id="questionText"></h2>
-  <div id="optionsContainer"></div>
-</div>
+      <div id="gameArea" class="hidden">
+        <h2 id="questionText"></h2>
+        <div id="optionsContainer"></div>
+      </div>
 
-<div id="resultModal" class="hidden">
-  <p id="resultMessage"></p>
-  <button onclick="loadNextPuzzle()">Next</button>
-</div>
-      
+      <div id="resultModal" class="hidden">
+        <p id="resultMessage"></p>
+        <button onclick="loadNextPuzzle()">Next</button>
+      </div>
     </div>
+  </div>
+
+  <div id="adSection">
+    <h4>Sponsored</h4>
+    <iframe id="adFrame" src="https://example.com" width="300" height="250" style="border:none;"></iframe>
   </div>
 </body>
 </html>
