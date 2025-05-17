@@ -16,7 +16,22 @@ loginBtn.onclick = async () => {
     const user = result.user;
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
+// after user is authenticated
+currentUser = user;
+userDocRef = doc(db, "users", user.uid);
 
+if (userSnap.exists()) {
+  const userData = userSnap.data();
+  const now = Date.now();
+  if (userData.cooldownEndTime && now < userData.cooldownEndTime) {
+    showCooldown(userData.cooldownEndTime);
+  } else {
+    showProfile(userData.username, userData.score);
+    await loadPuzzles();
+    showPuzzle();
+  }
+}
+    
     if (userSnap.exists()) {
       const userData = userSnap.data();
       showProfile(userData.username, userData.score);
@@ -45,4 +60,93 @@ function showProfile(username, score) {
   profileName.textContent = username;
   profileScore.textContent = score;
       }
-  
+  let puzzles = [];
+let currentPuzzleIndex = 0;
+let currentUser = null;
+let userDocRef = null;
+
+async function loadPuzzles() {
+  const res = await fetch("puzzles.json");
+  puzzles = await res.json();
+  currentPuzzleIndex = Math.floor(Math.random() * puzzles.length);
+}
+
+function showPuzzle() {
+  if (!puzzles.length) return;
+  const q = puzzles[currentPuzzleIndex];
+  document.getElementById("questionText").textContent = q.question;
+  const optionsContainer = document.getElementById("optionsContainer");
+  optionsContainer.innerHTML = "";
+  q.options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.textContent = option;
+    btn.onclick = () => checkAnswer(option, q.answer);
+    optionsContainer.appendChild(btn);
+  });
+  document.getElementById("gameArea").classList.remove("hidden");
+}
+
+async function checkAnswer(selected, correct) {
+  const isCorrect = selected === correct;
+  const { db, doc, updateDoc, getDoc } = window.firebase;
+  const userSnap = await getDoc(userDocRef);
+  const userData = userSnap.data();
+
+  if (isCorrect) {
+    const newScore = userData.score + 1;
+    await updateDoc(userDocRef, {
+      score: newScore,
+      consecutiveLosses: 0
+    });
+    showResult("အမယ်‌ ကြောက်စရာကြီး");
+    profileScore.textContent = newScore;
+  } else {
+    const newLoss = (userData.consecutiveLosses || 0) + 1;
+    let update = {
+      consecutiveLosses: newLoss
+    };
+    if (newLoss >= 3) {
+      const cooldownEnd = Date.now() + 60 * 60 * 1000;
+      update.cooldownEndTime = cooldownEnd;
+      showCooldown(cooldownEnd);
+    } else {
+      showResult("အရမ်းတော်တယ် ပိန်းတဲ့နေရာမှာ");
+    }
+    await updateDoc(userDocRef, update);
+  }
+}
+
+function showResult(msg) {
+  document.getElementById("resultMessage").textContent = msg;
+  document.getElementById("resultModal").classList.remove("hidden");
+  document.getElementById("gameArea").classList.add("hidden");
+}
+
+function loadNextPuzzle() {
+  document.getElementById("resultModal").classList.add("hidden");
+  currentPuzzleIndex = Math.floor(Math.random() * puzzles.length);
+  showPuzzle();
+}
+
+function showCooldown(endTime) {
+  document.getElementById("gameArea").classList.add("hidden");
+  document.getElementById("resultModal").classList.add("hidden");
+  document.getElementById("cooldown").classList.remove("hidden");
+
+  const timer = document.getElementById("cdTimer");
+  const interval = setInterval(() => {
+    const now = Date.now();
+    const diff = endTime - now;
+    if (diff <= 0) {
+      clearInterval(interval);
+      document.getElementById("cooldown").classList.add("hidden");
+      loadNextPuzzle();
+      return;
+    }
+    const hrs = String(Math.floor(diff / 3600000)).padStart(2, "0");
+    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+    const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+    timer.textContent = `${hrs}:${mins}:${secs}`;
+  }, 1000);
+}
+
