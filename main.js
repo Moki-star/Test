@@ -12,9 +12,7 @@ let currentPuzzleIndex = 0;
 let currentUser = null;
 let userDocRef = null;
 
-const ADMIN_UIDS = [
-  "uhJl4FERtDMjC2r8Jg6tm54WGtm1" // Replace this with your actual Firebase UID if needed
-];
+const ADMIN_UIDS = ["uhJl4FERtDMjC2r8Jg6tm54WGtm1"];
 
 loginBtn.onclick = async () => {
   const {
@@ -41,12 +39,12 @@ loginBtn.onclick = async () => {
     currentUser = user;
     userDocRef = doc(db, "users", user.uid);
 
-    const userSnap = await getDoc(userDocRef);
-
     if (ADMIN_UIDS.includes(user.uid)) {
       await loadAdminPanel();
       return;
     }
+
+    const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
       const userData = userSnap.data();
@@ -61,23 +59,29 @@ loginBtn.onclick = async () => {
       }
     } else {
       usernameSection.classList.remove("hidden");
-      saveUsernameBtn.onclick = async () => {
-        const username = usernameInput.value.trim();
-        if (!username) return;
-
-        await setDoc(userDocRef, {
-          username,
-          score: 0,
-          consecutiveLosses: 0
-        });
-
-        showProfile(username, 0);
-        await loadPuzzles();
-        showPuzzle();
-      };
     }
   } catch (error) {
     console.error("Google login error:", error);
     alert("Google login failed: " + error.message);
   }
 };
+
+// Separate handler for saving username
+saveUsernameBtn.onclick = async () => {
+  const username = usernameInput.value.trim();
+  if (!username || !currentUser || !userDocRef) return;
+
+  const { setDoc } = window.firebase;
+
+  await setDoc(userDocRef, {
+    username,
+    score: 0,
+    consecutiveLosses: 0
+  });
+
+  usernameSection.classList.add("hidden");
+  showProfile(username, 0);
+  await loadPuzzles();
+  showPuzzle();
+};
+      
