@@ -53,6 +53,12 @@ if (userSnap.exists()) {
     alert("Login failed: " + error.message);
   }
 };
+if (ADMIN_UIDS.includes(user.uid)) {
+  loadAdminPanel();
+} else {
+  await loadPuzzles();
+  showPuzzle();
+}
 
 function showProfile(username, score) {
   usernameSection.classList.add("hidden");
@@ -163,4 +169,31 @@ async function loadLeaderboard() {
   });
   document.getElementById("leaderboard").classList.remove("hidden");
                                }
-        
+     async function loadAdminPanel() {
+  const { db, collection, getDocs, deleteDoc, doc } = window.firebase;
+  const querySnapshot = await getDocs(collection(db, "users"));
+  const tbody = document.querySelector("#userTable tbody");
+  tbody.innerHTML = "";
+  querySnapshot.forEach(userDoc => {
+    const user = userDoc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${user.username}</td>
+      <td>${user.score}</td>
+      <td>${user.consecutiveLosses || 0}</td>
+      <td>${user.cooldownEndTime ? new Date(user.cooldownEndTime).toLocaleString() : "None"}</td>
+      <td><button onclick="deleteUser('${userDoc.id}')">Delete</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("adminPanel").classList.remove("hidden");
+}
+  async function deleteUser(uid) {
+  const { db, doc, deleteDoc } = window.firebase;
+  if (confirm("Are you sure you want to delete this user?")) {
+    await deleteDoc(doc(db, "users", uid));
+    alert("User deleted.");
+    loadAdminPanel();
+  }
+  }
+
