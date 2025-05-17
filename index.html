@@ -20,6 +20,21 @@
     <div id="profile" class="hidden">
       <p><strong>Welcome:</strong> <span id="profileName"></span></p>
       <p><strong>Score:</strong> <span id="profileScore">0</span></p>
+  
+      <div id="cooldown" class="hidden">
+  <p>😴 သုံးကြိမ် ဆုံးရှုံးပြီးသားပါ။ နောက်ထပ် <span id="cdTimer"></span> ပြန်လာပါ။</p>
+</div>
+
+<div id="gameArea" class="hidden">
+  <h2 id="questionText"></h2>
+  <div id="optionsContainer"></div>
+</div>
+
+<div id="resultModal" class="hidden">
+  <p id="resultMessage"></p>
+  <button onclick="loadNextPuzzle()">Next</button>
+</div>
+      
     </div>
   </div>
 </body>
